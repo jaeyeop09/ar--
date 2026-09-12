@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Modular Architect | AR 건축 설계</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header><div class="brand"><span>MA</span><div><b>MODULAR ARCHITECT</b><small>AR × ECO ARCHITECTURE LAB</small></div></div><div class="status" id="result">설계 시작</div></header>
+<main>
+<aside class="panel left">
+<h2>건축 요소</h2><p class="hint">요소를 캔버스로 드래그하세요.<br>이동은 <b>2cm 단위</b>로 맞춰집니다.</p>
+<div class="tools" id="palette">
+<button class="tool" draggable="true" data-type="floor">▦ <span>바닥</span></button>
+<button class="tool" draggable="true" data-type="wall">▥ <span>벽</span></button>
+<button class="tool" draggable="true" data-type="column">▮ <span>기둥</span></button>
+<button class="tool" draggable="true" data-type="roof">⌂ <span>지붕</span></button>
+<button class="tool" draggable="true" data-type="window">▣ <span>창문</span></button>
+<button class="tool" draggable="true" data-type="door">▤ <span>문</span></button>
+<button class="tool" draggable="true" data-type="stairs">▰ <span>계단</span></button>
+<button class="tool" draggable="true" data-type="balcony">▱ <span>발코니</span></button>
+<button class="tool" draggable="true" data-type="tree">♣ <span>나무</span></button>
+<button class="tool" draggable="true" data-type="bench">▰ <span>벤치</span></button>
+<button class="tool" draggable="true" data-type="lamp">♢ <span>조명</span></button>
+<button class="tool" draggable="true" data-type="plant">✿ <span>화분</span></button>
+</div>
+<hr>
+<button class="secondary" id="rotate">↻ 선택 요소 회전</button><button class="danger" id="delete">삭제</button>
+</aside>
+<section class="workspace">
+<div class="mission"><div><b>MISSION 01 · 내진 설계</b><p>기둥 <strong>4개 이상</strong> + 벽 <strong>2개 이상</strong> + 바닥 <strong>1개 이상</strong>을 사용해 안정적인 건물을 설계하세요.</p></div><button id="check">설계 검사</button></div>
+<div class="canvas-wrap"><div id="canvas" aria-label="2cm 모눈 건축 설계 캔버스"></div></div>
+<div class="legend">📐 1칸 = 2cm　　🖱️ 드래그 이동　　↻ 회전　　DEL 삭제</div>
+</section>
+<aside class="panel right">
+<h2>내진 설계 카드</h2>
+<div class="mission-card"><span>MISSION 01</span><h3>지진에 강한 집</h3><ul><li id="m1">○ 기둥 4개 이상</li><li id="m2">○ 벽 2개 이상</li><li id="m3">○ 바닥 1개 이상</li><li id="m4">○ 기둥과 벽을 함께 배치</li></ul><div class="score" id="score">0 / 4 조건</div></div>
+<div class="preview"><div class="preview-head"><b>AR / 3D PREVIEW</b><small>사이트 연결 영역</small></div><div class="arbox">AR<br><small>실제 WebAR 화면을 여기에 연결</small></div><button class="secondary">QR / AR 연결 준비</button></div>
+<div class="tip"><b>건축가 TIP</b><br>지진에 대응하려면 구조 요소가 힘을 전달할 수 있도록 균형 있게 배치되어야 합니다.</div>
+</aside>
+</main>
+<script src="script.js"></script>
+</body></html>
