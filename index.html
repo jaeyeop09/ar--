@@ -36,9 +36,9 @@
 <aside class="panel right">
 <h2>내진 설계 카드</h2>
 <div class="mission-card"><span>MISSION 01</span><h3>지진에 강한 집</h3><ul><li id="m1">○ 기둥 4개 이상</li><li id="m2">○ 벽 2개 이상</li><li id="m3">○ 바닥 1개 이상</li><li id="m4">○ 기둥과 벽을 함께 배치</li></ul><div class="score" id="score">0 / 4 조건</div></div>
-<div class="preview"><div class="preview-head"><b>AR / 3D PREVIEW</b><small>사이트 연결 영역</small></div><div class="arbox">AR<br><small>실제 WebAR 화면을 여기에 연결</small></div><button class="secondary">QR / AR 연결 준비</button></div>
+<div class="preview"><div class="preview-head"><b>AR / 3D PREVIEW</b><small>사이트 연결 영역</small></div><div class="arbox">AR<br><small>실제 WebAR 화면을 여기에 연결</small></div><button class="ar-button" id="arMode">📱 AR 모드 시작</button><button class="secondary" id="qrButton">QR / AR 연결 준비</button></div>
 <div class="tip"><b>건축가 TIP</b><br>지진에 대응하려면 구조 요소가 힘을 전달할 수 있도록 균형 있게 배치되어야 합니다.</div>
 </aside>
-</main>
+</main><div class="ar-modal" id="arModal" aria-hidden="true"><div class="ar-ui"><div class="ar-top"><b>MODULAR ARCHITECT · AR MODE</b><button id="closeAr">✕</button></div><div class="ar-guide"><div class="reticle">＋</div><b>바닥을 향해 기기를 비춰보세요</b><small>설계 모형을 실제 공간에 배치하는 AR 미리보기</small></div><div class="ar-model" id="arModel"><div class="cube c1"></div><div class="cube c2"></div><div class="cube c3"></div><div class="roof3d"></div></div><div class="ar-bottom"><span id="arMessage">AR 미리보기를 준비합니다.</span><button id="arPlace">🏠 설계 배치</button></div></div></div>
 <script src="script.js"></script>
 </body></html>
