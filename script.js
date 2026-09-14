@@ -69,16 +69,27 @@ document.getElementById('check').onclick=()=>{
 function setView(next){
  view=next;
  const is3=next==='3d';
- document.getElementById('canvas').style.display=is3?'none':'block';
- document.getElementById('scene3d').classList.toggle('show',is3);
+ const canvasEl=document.getElementById('canvas');
+ const sceneEl=document.getElementById('scene3d');
+ const wrap=document.querySelector('.canvas-wrap');
+ canvasEl.style.display=is3?'none':'block';
+ sceneEl.classList.toggle('show',is3);
+ sceneEl.style.display=is3?'block':'none';
+ sceneEl.setAttribute('aria-hidden',is3?'false':'true');
+ if(is3){
+   wrap.classList.add('mode-3d');
+   render3D();
+   requestAnimationFrame(()=>applyCamera(cameraMode));
+ }else{
+   wrap.classList.remove('mode-3d');
+ }
  document.getElementById('view2d').classList.toggle('active',!is3);
  document.getElementById('view3d').classList.toggle('active',is3);
  document.getElementById('legend').textContent=is3?'🖱️ 3D 드래그: 시점 회전 · 휠: 확대/축소 · 위/아이소메트릭/워크스루':'🖱️ 드래그 이동 · ↻ 회전 · DEL 삭제 · 📐 2cm 스냅 · 마우스 휠로 확대/축소';
- if(is3)render3D();
  setStatus(is3?'3D Floor Planner 보기':'2D 평면도 보기');
 }
-document.getElementById('view2d').onclick=()=>setView('2d');
-document.getElementById('view3d').onclick=()=>setView('3d');
+document.getElementById('view2d').addEventListener('click',()=>setView('2d'));
+document.getElementById('view3d').addEventListener('click',()=>setView('3d'));
 
 const scene=document.getElementById('scene3d'),world=document.getElementById('sceneWorld');
 let cameraMode='iso', sceneDrag=null;
