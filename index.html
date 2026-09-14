@@ -52,7 +52,17 @@
   </div>
   <div class="canvas-wrap" id="workspaceView">
     <div id="canvas"></div>
-    <div id="scene3d" aria-label="3D 설계 보기"><div id="sceneWorld"></div><div class="scene-label">3D 설계 보기 · 드래그하여 시점 회전</div></div>
+    <div id="scene3d" aria-label="Floorplanner 스타일 3D 설계 보기">
+  <div class="scene-toolbar">
+    <button id="camIso" class="active">아이소메트릭</button>
+    <button id="camTop">위에서 보기</button>
+    <button id="camWalk">워크스루</button>
+    <button id="camReset">카메라 초기화</button>
+  </div>
+  <div id="sceneWorld"><div id="roomShell"></div></div>
+  <div class="scene-label">3D 설계 보기 · 드래그하여 시점 회전 · 휠로 확대/축소</div>
+  <div class="scene-help">2D에서 배치한 요소가 3D 공간에 자동 반영됩니다.</div>
+</div>
   </div>
   <div class="legend" id="legend">🖱️ 드래그 이동　·　↻ 회전　·　DEL 삭제　·　📐 2cm 스냅　·　마우스 휠로 확대/축소</div>
 </section>
