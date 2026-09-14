@@ -25,3 +25,31 @@ main{height:calc(100vh - 66px);display:grid;grid-template-columns:230px minmax(5
 .bench3d,.table3d,.sofa3d,.bed3d,.cabinet3d{background:#92400e;border:2px solid #451a03;transform:rotateZ(var(--rot)) translateZ(28px);border-radius:4px}
 .table3d{background:#a16207}.sofa3d{background:#64748b}.bed3d{background:#e2e8f0;border-color:#64748b}.cabinet3d{background:#78716c}
 #scene3d.show #sceneWorld{animation:sceneIn .35s ease-out}@keyframes sceneIn{from{opacity:.2;transform:translate(-50%,-50%) rotateX(70deg) rotateZ(-38deg) scale(.85)}to{opacity:1}}
+
+/* Floorplanner-style 3D workspace */
+#scene3d{position:relative;display:none;min-height:520px;width:100%;height:100%;overflow:hidden;border-radius:10px;background:linear-gradient(180deg,#f8fafc 0%,#e2e8f0 100%);perspective:1200px;cursor:grab}
+#scene3d.show{display:block!important}
+.scene-toolbar{position:absolute;top:14px;right:14px;z-index:30;display:flex;gap:5px;background:#0f172add;padding:6px;border:1px solid #334155;border-radius:10px;backdrop-filter:blur(8px)}
+.scene-toolbar button{border:1px solid #475569;background:#172033;color:#cbd5e1;border-radius:6px;padding:7px 9px;font-size:10px;font-weight:800;cursor:pointer}
+.scene-toolbar button:hover,.scene-toolbar button.active{background:#10b981;color:#052e25;border-color:#10b981}
+#sceneWorld{position:absolute;left:50%;top:56%;width:760px;height:520px;transform-style:preserve-3d;transform:translate(-50%,-50%) rotateX(58deg) rotateZ(-28deg) scale(1);transition:transform .18s ease;transform-origin:center}
+#roomShell{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
+.floor3d{position:absolute;left:0;top:0;width:760px;height:520px;background-color:#f8fafc;background-image:linear-gradient(#cbd5e1 1px,transparent 1px),linear-gradient(90deg,#cbd5e1 1px,transparent 1px);background-size:20px 20px;border:4px solid #64748b;box-shadow:0 28px 45px #33415544;transform:translateZ(-3px)}
+.obj3{position:absolute;transform-style:preserve-3d;transform-origin:center;display:block;box-shadow:0 6px 12px #33415544}
+.obj3:after{content:attr(data-label);position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotateZ(calc(var(--rot) * -1));font-size:8px;font-weight:900;color:#0f172a;white-space:nowrap;pointer-events:none;text-shadow:0 1px 0 #fff8}
+.wall3d{height:24px!important;background:#f1f5f9;border:2px solid #475569;transform:rotateZ(var(--rot)) translateZ(78px);box-shadow:0 10px 13px #33415566}
+.column3d{width:22px!important;height:88px!important;background:linear-gradient(90deg,#64748b,#e2e8f0,#64748b);border:2px solid #475569;border-radius:2px;transform:rotateZ(var(--rot)) translateZ(75px)}
+.roof3d{background:#c76b4b;border:2px solid #7c2d12;transform:rotateZ(var(--rot)) translateZ(150px) rotateX(18deg);clip-path:polygon(50% 0,100% 70%,90% 100%,10% 100%,0 70%)}
+.window3d{background:#7dd3fc;border:5px solid #334155;transform:rotateZ(var(--rot)) translateZ(82px)}
+.door3d{background:#92400e;border:3px solid #451a03;transform:rotateZ(var(--rot)) translateZ(82px)}
+.stairs3d{background:repeating-linear-gradient(0deg,#a8a29e 0 7px,#78716c 7px 9px);border:2px solid #57534e;transform:rotateZ(var(--rot)) translateZ(18px)}
+.balcony3d{background:#a7f3d0;border:2px solid #047857;transform:rotateZ(var(--rot)) translateZ(86px)}
+.solar3d{background:#172554;border:2px solid #10b981;transform:rotateZ(var(--rot)) translateZ(108px) rotateX(18deg)}
+.tree3d,.lamp3d,.plant3d{font-size:30px;display:grid;place-items:center;box-shadow:none;transform:rotateZ(var(--rot)) translateZ(22px)}
+.bench3d,.table3d,.sofa3d,.bed3d,.cabinet3d{background:#92400e;border:2px solid #451a03;transform:rotateZ(var(--rot)) translateZ(32px);border-radius:4px}
+.table3d{background:#a16207}.sofa3d{background:#64748b}.bed3d{background:#e2e8f0;border-color:#64748b}.cabinet3d{background:#78716c}
+.floor-piece3{background:#dbeafe;border:3px solid #64748b;opacity:.95;transform:rotateZ(var(--rot)) translateZ(3px)}
+.scene-label{display:block;position:absolute;left:14px;top:14px;z-index:20;background:#0f172acc;color:#fff;border:1px solid #475569;border-radius:8px;padding:8px 11px;font-size:10px;pointer-events:none}
+.scene-help{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);z-index:20;background:#ffffffdd;color:#334155;border:1px solid #cbd5e1;border-radius:999px;padding:7px 12px;font-size:9px;pointer-events:none}
+#scene3d.walk{cursor:crosshair}
+#scene3d.walk #sceneWorld{transition:none}
