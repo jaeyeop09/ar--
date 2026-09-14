@@ -110,12 +110,31 @@ function applyCamera(mode){
  setStatus(mode==='iso'?'아이소메트릭 보기':mode==='top'?'위에서 보기':'워크스루 보기');
 }
 function make3D(cls,x,y,w,h,rot,label){
- const d=document.createElement('div');
- d.className='obj3 '+cls;d.dataset.label=label;
- d.style.left=(x/900*760)+'px';d.style.top=(y/620*520)+'px';
- d.style.width=Math.max(18,w/900*760)+'px';d.style.height=Math.max(12,h/620*520)+'px';
- d.style.setProperty('--rot',rot+'deg');
- return d;
+  const d=document.createElement('div');
+  d.className='obj3 '+cls;
+  d.dataset.label=label;
+  d.style.left=(x/900*760)+'px';
+  d.style.top=(y/620*520)+'px';
+  d.style.width=Math.max(18,w/900*760)+'px';
+  d.style.height=Math.max(12,h/620*520)+'px';
+  d.style.setProperty('--rot',rot+'deg');
+
+  if(cls==='wall3d'){
+    d.classList.add('cuboid3d');
+    d.style.setProperty('--wallW',Math.max(40,w/900*760)+'px');
+    d.style.setProperty('--wallD','14px');
+    d.style.setProperty('--wallH','120px');
+    d.innerHTML='<div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div><div class="wall-label">'+label+'</div>';
+  }else if(cls==='column3d'){
+    d.classList.add('cuboid3d','column-box');
+    d.style.setProperty('--wallW',Math.max(18,w/900*760)+'px');
+    d.style.setProperty('--wallD',Math.max(18,h/620*520*.38)+'px');
+    d.style.setProperty('--wallH','88px');
+    d.innerHTML='<div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div>';
+  }else if(cls==='roof3d'){
+    d.classList.add('roof-solid');
+  }
+  return d;
 }
 function render3D(){
  if(!world)return;
@@ -168,3 +187,8 @@ document.getElementById('openUrl').onclick=()=>{const u=document.getElementById(
 
 [['floor',240,220],['column',260,240],['column',340,240],['column',260,340],['column',340,340],['wall',260,220],['wall',260,400],['solar',440,240],['tree',560,340],['sofa',430,350],['table',500,360]].forEach(s=>addPiece(s[0],s[1],s[2],false));
 history=[];update();render3D();
+
+// === Realistic 3D wall/cuboid upgrade ===
+function refreshRealistic3D(){
+  if(view==='3d') render3D();
+}
