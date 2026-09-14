@@ -122,8 +122,8 @@ function make3D(cls,x,y,w,h,rot,label){
   if(cls==='wall3d'){
     d.classList.add('cuboid3d');
     d.style.setProperty('--wallW',Math.max(40,w/900*760)+'px');
-    d.style.setProperty('--wallD','14px');
-    d.style.setProperty('--wallH','120px');
+    d.style.setProperty('--wallD','16px');
+    d.style.setProperty('--wallH','170px');
     d.innerHTML='<div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div><div class="wall-label">'+label+'</div>';
   }else if(cls==='column3d'){
     d.classList.add('cuboid3d','column-box');
