@@ -7,12 +7,13 @@
 </head>
 <body>
 <header>
-  <div class="brand"><span>MA</span><div><b>MODULAR ARCHITECT</b><small>FLOOR PLANNER · AR DESIGN STUDIO</small></div></div>
+  <div class="brand"><span>MA</span><div><b>MODULAR ARCHITECT</b><small>FLOOR PLANNER · 2D / 3D · AR DESIGN STUDIO</small></div></div>
   <div class="top-actions">
     <button class="topbtn" id="newBtn">＋ 새 설계</button><button class="topbtn" id="undoBtn">↶ 실행 취소</button>
     <button class="topbtn" id="redoBtn">↷ 다시 실행</button><button class="topbtn" id="gridBtn">▦ 2cm 모눈</button>
     <button class="topbtn ar" id="arMode">📱 AR 모드</button>
   </div>
+  <div class="view-switch"><button id="view2d" class="active">2D</button><button id="view3d">3D</button></div>
   <div class="status" id="status">2cm 스냅 ON</div>
 </header>
 <main>
@@ -31,12 +32,16 @@
     <button class="tool" draggable="true" data-type="balcony"><i>▱</i><span>발코니</span></button>
     <button class="tool" draggable="true" data-type="solar"><i>▦</i><span>태양광</span></button>
   </div>
-  <div class="section-title">장식</div>
+  <div class="section-title">장식 / 가구</div>
   <div class="tools">
     <button class="tool" draggable="true" data-type="tree"><i>🌳</i><span>나무</span></button>
     <button class="tool" draggable="true" data-type="bench"><i>▰</i><span>벤치</span></button>
     <button class="tool" draggable="true" data-type="lamp"><i>💡</i><span>조명</span></button>
     <button class="tool" draggable="true" data-type="plant"><i>🪴</i><span>화분</span></button>
+    <button class="tool" draggable="true" data-type="sofa"><i>▰</i><span>소파</span></button>
+    <button class="tool" draggable="true" data-type="table"><i>▱</i><span>테이블</span></button>
+    <button class="tool" draggable="true" data-type="bed"><i>▭</i><span>침대</span></button>
+    <button class="tool" draggable="true" data-type="cabinet"><i>▤</i><span>수납장</span></button>
   </div>
   <div class="controls"><button id="rotate">↻ 회전</button><button id="delete" class="danger">삭제</button></div>
 </aside>
@@ -45,8 +50,11 @@
     <div><b>🎯 MISSION 01 · 내진 설계</b><p>기둥 4개 + 벽 2개 + 바닥 1개를 사용하고, 구조를 균형 있게 배치하세요.</p></div>
     <button id="check">설계 검사</button>
   </div>
-  <div class="canvas-wrap"><div id="canvas"></div></div>
-  <div class="legend">🖱️ 드래그 이동　·　↻ 회전　·　DEL 삭제　·　📐 2cm 스냅　·　마우스 휠로 확대/축소</div>
+  <div class="canvas-wrap" id="workspaceView">
+    <div id="canvas"></div>
+    <div id="scene3d" aria-label="3D 설계 보기"><div id="sceneWorld"></div><div class="scene-label">3D 설계 보기 · 드래그하여 시점 회전</div></div>
+  </div>
+  <div class="legend" id="legend">🖱️ 드래그 이동　·　↻ 회전　·　DEL 삭제　·　📐 2cm 스냅　·　마우스 휠로 확대/축소</div>
 </section>
 <aside class="panel right">
   <div class="right-head"><h2>설계 정보</h2><span class="pill" id="snapPill">SNAP 2cm</span></div>
