@@ -73,18 +73,38 @@ function setView(next){
  document.getElementById('scene3d').classList.toggle('show',is3);
  document.getElementById('view2d').classList.toggle('active',!is3);
  document.getElementById('view3d').classList.toggle('active',is3);
- document.getElementById('legend').textContent=is3?'🖱️ 3D 화면 드래그로 시점 회전　·　휠로 확대/축소　·　2D에서 요소 배치':'🖱️ 드래그 이동　·　↻ 회전　·　DEL 삭제　·　📐 2cm 스냅　·　마우스 휠로 확대/축소';
+ document.getElementById('legend').textContent=is3?'🖱️ 3D 드래그: 시점 회전 · 휠: 확대/축소 · 위/아이소메트릭/워크스루':'🖱️ 드래그 이동 · ↻ 회전 · DEL 삭제 · 📐 2cm 스냅 · 마우스 휠로 확대/축소';
  if(is3)render3D();
- setStatus(is3?'3D 설계 보기':'2D 평면도 보기');
+ setStatus(is3?'3D Floor Planner 보기':'2D 평면도 보기');
 }
 document.getElementById('view2d').onclick=()=>setView('2d');
 document.getElementById('view3d').onclick=()=>setView('3d');
 
 const scene=document.getElementById('scene3d'),world=document.getElementById('sceneWorld');
+let cameraMode='iso', sceneDrag=null;
+const cameraPresets={
+ iso:{x:58,z:-28,scale:1},
+ top:{x:88,z:0,scale:1.05},
+ walk:{x:18,z:-12,scale:1.15}
+};
+function applyCamera(mode){
+ cameraMode=mode;
+ const p=cameraPresets[mode];
+ orbit.x=p.x;orbit.y=p.z;orbit.zoom=p.scale;
+ world.style.transform='translate(-50%,-50%) rotateX('+p.x+'deg) rotateZ('+p.z+'deg) scale('+p.scale+')';
+ scene.classList.toggle('walk',mode==='walk');
+ ['camIso','camTop','camWalk'].forEach(id=>document.getElementById(id)?.classList.remove('active'));
+ const id=mode==='iso'?'camIso':mode==='top'?'camTop':'camWalk';
+ document.getElementById(id)?.classList.add('active');
+ setStatus(mode==='iso'?'아이소메트릭 보기':mode==='top'?'위에서 보기':'워크스루 보기');
+}
 function make3D(cls,x,y,w,h,rot,label){
- const d=document.createElement('div');d.className='obj3 '+cls;d.dataset.label=label;
- d.style.left=(x/900*760)+'px';d.style.top=(y/620*520)+'px';d.style.width=Math.max(18,w/900*760)+'px';d.style.height=Math.max(12,h/620*520)+'px';
- d.style.setProperty('--rot',rot+'deg');return d;
+ const d=document.createElement('div');
+ d.className='obj3 '+cls;d.dataset.label=label;
+ d.style.left=(x/900*760)+'px';d.style.top=(y/620*520)+'px';
+ d.style.width=Math.max(18,w/900*760)+'px';d.style.height=Math.max(12,h/620*520)+'px';
+ d.style.setProperty('--rot',rot+'deg');
+ return d;
 }
 function render3D(){
  if(!world)return;
@@ -92,17 +112,35 @@ function render3D(){
  const floor=document.createElement('div');floor.className='floor3d';world.appendChild(floor);
  const pieces=[...canvas.querySelectorAll('.piece')];
  pieces.forEach(p=>{
-  const t=p.dataset.type,x=p.offsetLeft,y=p.offsetTop,w=p.offsetWidth,h=p.offsetHeight,rot=+(p.dataset.rot||0);
-  if(t==='floor'){const d=make3D('floor-piece3',x,y,w,h,rot,names[t]);world.appendChild(d);return}
-  const d=make3D(t+'3d',x,y,w,h,rot,names[t]);world.appendChild(d);
+   const t=p.dataset.type,x=p.offsetLeft,y=p.offsetTop,w=p.offsetWidth,h=p.offsetHeight,rot=+(p.dataset.rot||0);
+   const d=make3D(t==='floor'?'floor-piece3':t+'3d',x,y,w,h,rot,names[t]);
+   if(icon[t])d.textContent=icon[t];
+   world.appendChild(d);
  });
+ applyCamera(cameraMode);
 }
-function orbitScene(dx,dy){orbit.y=Math.max(-65,Math.min(15,orbit.y+dx*.35));orbit.x=Math.max(35,Math.min(85,orbit.x-dy*.25));world.style.transform='translate(-50%,-50%) rotateX('+orbit.x+'deg) rotateZ('+orbit.y+'deg) scale('+orbit.zoom+')'}
-let sceneDrag=null;
+function orbitScene(dx,dy){
+ if(cameraMode==='walk')return;
+ orbit.y+=dx*.35; orbit.x=Math.max(32,Math.min(88,orbit.x-dy*.25));
+ world.style.transform='translate(-50%,-50%) rotateX('+orbit.x+'deg) rotateZ('+orbit.y+'deg) scale('+orbit.zoom+')';
+}
 scene.addEventListener('pointerdown',e=>{if(view!=='3d')return;sceneDrag={x:e.clientX,y:e.clientY};scene.setPointerCapture(e.pointerId)});
-scene.addEventListener('pointermove',e=>{if(!sceneDrag)return;orbitScene(e.clientX-sceneDrag.x,e.clientY-sceneDrag.y);sceneDrag={x:e.clientX,y:e.clientY}});
+scene.addEventListener('pointermove',e=>{
+ if(!sceneDrag||view!=='3d')return;
+ orbitScene(e.clientX-sceneDrag.x,e.clientY-sceneDrag.y);
+ sceneDrag={x:e.clientX,y:e.clientY};
+});
 scene.addEventListener('pointerup',()=>sceneDrag=null);
-scene.addEventListener('wheel',e=>{if(view!=='3d')return;e.preventDefault();orbit.zoom=Math.max(.65,Math.min(1.45,orbit.zoom+(e.deltaY<0?.06:-.06)));orbitScene(0,0);setStatus('3D 확대 '+Math.round(orbit.zoom*100)+'%')},{passive:false});
+scene.addEventListener('wheel',e=>{
+ if(view!=='3d')return;e.preventDefault();
+ orbit.zoom=Math.max(.65,Math.min(1.5,orbit.zoom+(e.deltaY<0?.06:-.06)));
+ world.style.transform='translate(-50%,-50%) rotateX('+orbit.x+'deg) rotateZ('+orbit.y+'deg) scale('+orbit.zoom+')';
+ setStatus('3D 확대 '+Math.round(orbit.zoom*100)+'%');
+},{passive:false});
+document.getElementById('camIso').onclick=()=>applyCamera('iso');
+document.getElementById('camTop').onclick=()=>applyCamera('top');
+document.getElementById('camWalk').onclick=()=>applyCamera('walk');
+document.getElementById('camReset').onclick=()=>applyCamera('iso');
 
 function renderArDesign(){const box=document.getElementById('arPreview');box.innerHTML='<div class="ar-cube"></div><div class="ar-cube"></div><div class="ar-cube"></div><div class="ar-roof"></div>'}
 async function openAR(){
