@@ -76,3 +76,55 @@ main{height:calc(100vh - 66px);display:grid;grid-template-columns:230px minmax(5
 .column-box{transform:rotateZ(var(--rot)) translateZ(44px)!important}
 .roof-solid{background:linear-gradient(135deg,#a9462c,#d97757 55%,#8f351f)!important;border:3px solid #6b2717!important;border-radius:4px;box-shadow:0 12px 18px #33415566!important;transform:rotateZ(var(--rot)) translateZ(155px) rotateX(16deg)!important;clip-path:polygon(50% 0,100% 70%,90% 100%,10% 100%,0 70%)}
 #scene3d .obj3:after{display:none}
+
+/* === FINAL FLOORPLANNER-STYLE ARCHITECTURAL 3D === */
+.architect-wall3d{
+  position:absolute!important;
+  width:var(--wallW)!important;
+  height:var(--wallH)!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  transform-origin:50% 100%!important;
+  transform:rotateZ(var(--rot)) rotateX(90deg)!important;
+  transform-style:preserve-3d!important;
+  z-index:10;
+}
+.architect-wall3d .face{position:absolute;box-sizing:border-box;backface-visibility:visible}
+.architect-wall3d .front,.architect-wall3d .back{
+  left:0;top:0;width:100%;height:100%;
+  border:2px solid #64748b;
+}
+.architect-wall3d .front{
+  background:linear-gradient(90deg,#d5dde5,#fff 16%,#f8fafc 55%,#e2e8f0);
+  transform:translateZ(calc(var(--wallD)/2));
+}
+.architect-wall3d .back{
+  background:#cbd5e1;
+  transform:rotateY(180deg) translateZ(calc(var(--wallD)/2));
+}
+.architect-wall3d .left,.architect-wall3d .right{
+  top:0;width:var(--wallD);height:100%;
+  border:1px solid #64748b;
+}
+.architect-wall3d .left{left:calc(var(--wallD)/-2);background:#aeb9c5;transform:rotateY(-90deg) translateZ(calc(var(--wallW)/2))}
+.architect-wall3d .right{right:calc(var(--wallD)/-2);background:#d5dde5;transform:rotateY(90deg) translateZ(calc(var(--wallW)/2))}
+.architect-wall3d .top,.architect-wall3d .bottom{
+  left:0;width:100%;height:var(--wallD);border:1px solid #64748b
+}
+.architect-wall3d .top{top:calc(var(--wallD)/-2);background:#fff;transform:rotateX(90deg) translateZ(calc(var(--wallH)/2))}
+.architect-wall3d .bottom{bottom:calc(var(--wallD)/-2);background:#94a3b8;transform:rotateX(-90deg) translateZ(calc(var(--wallH)/2))}
+.architect-door3d,.architect-window3d{
+  position:absolute!important;background:transparent!important;border:0!important;
+  box-shadow:none!important;transform-origin:50% 100%!important;
+  transform:rotateZ(var(--rot)) rotateX(90deg) translateZ(2px)!important;
+  transform-style:preserve-3d!important;z-index:30;
+}
+.architect-door3d{width:var(--doorW)!important;height:var(--doorH)!important}
+.door-panel{position:absolute;inset:0;background:linear-gradient(90deg,#5b321d,#9a6339 45%,#4b2a18);border:3px solid #3b2417;border-radius:2px;transform:translateZ(3px)}
+.door-panel:after{content:"";position:absolute;right:8px;top:52%;width:5px;height:5px;border-radius:50%;background:#eab308}
+.door-frame{position:absolute;inset:-5px;border:4px solid #334155;transform:translateZ(1px)}
+.architect-window3d{width:var(--winW)!important;height:var(--winH)!important}
+.window-glass{position:absolute;inset:0;background:linear-gradient(135deg,#bae6fd,#60a5fa);border:4px solid #334155;transform:translateZ(4px)}
+.window-glass:after{content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;background:#334155;transform:translateX(-50%)}
+.window-frame{position:absolute;inset:-4px;border:3px solid #475569;transform:translateZ(2px)}
