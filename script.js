@@ -1,5 +1,5 @@
 const canvas=document.getElementById('canvas');
-let selected=null,drag=null,history=[],future=[],snap=20,gridOn=true,zoom=1,stream=null,view='2d';
+let selected=null,drag=null,history=[],future=[],snap=2,gridOn=true,zoom=1,stream=null,view='2d'; // 1m=100px, 2cm=2px
 let orbit={x:58,y:-28,zoom:1};
 
 const names={floor:'바닥',wall:'벽',column:'기둥',roof:'지붕',window:'창문',door:'문',stairs:'계단',balcony:'발코니',solar:'태양광',tree:'나무',bench:'벤치',lamp:'조명',plant:'화분',sofa:'소파',table:'테이블',bed:'침대',cabinet:'수납장'};
@@ -34,7 +34,7 @@ function select(el){document.querySelectorAll('.piece.selected').forEach(x=>x.cl
 function showInfo(el){
  const box=document.getElementById('selectedInfo');
  if(!el){box.textContent='요소를 선택하면 위치·크기를 확인할 수 있어요.';return}
- box.innerHTML='<b style="color:#e2e8f0">'+names[el.dataset.type]+'</b><br><span style="color:#94a3b8">위치 '+(el.offsetLeft/snap*2)+'cm × '+(el.offsetTop/snap*2)+'cm<br>크기 '+Math.round(el.offsetWidth/10)+'cm × '+Math.round(el.offsetHeight/10)+'cm<br>회전 '+(+(el.dataset.rot||0))+'°</span>';
+ box.innerHTML='<b style="color:#e2e8f0">'+names[el.dataset.type]+'</b><br><span style="color:#94a3b8">위치 '+(el.offsetLeft/100*100).toFixed(0)+'cm × '+(el.offsetTop/100*100).toFixed(0)+'cm<br>크기 '+Math.round(el.offsetWidth/100*100)+'cm × '+Math.round(el.offsetHeight/100*100)+'cm<br>회전 '+(+(el.dataset.rot||0))+'°</span>';
 }
 function update(){
  const all=[...canvas.querySelectorAll('.piece')],c={};all.forEach(p=>c[p.dataset.type]=(c[p.dataset.type]||0)+1);
@@ -123,7 +123,7 @@ function make3D(cls,x,y,w,h,rot,label){
     d.classList.add('architect-wall3d','cuboid3d');
     d.style.setProperty('--wallW',Math.max(40,w/900*760)+'px');
     d.style.setProperty('--wallD','14px');
-    d.style.setProperty('--wallH','150px'); // 3m 기본 높이
+    d.style.setProperty('--wallH','300px'); // 3m 기본 높이: 1m=100px
     d.innerHTML='<div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div><div class="wall-label">'+label+'</div>';
   }else if(cls==='door3d'){
     d.classList.add('architect-door3d');
