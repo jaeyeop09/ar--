@@ -123,7 +123,7 @@ function make3D(cls,x,y,w,h,rot,label){
     d.classList.add('architect-wall3d','cuboid3d');
     d.style.setProperty('--wallW',Math.max(40,w/900*760)+'px');
     d.style.setProperty('--wallD','14px');
-    d.style.setProperty('--wallH','150px');
+    d.style.setProperty('--wallH','150px'); // 3m 기본 높이
     d.innerHTML='<div class="face front"></div><div class="face back"></div><div class="face left"></div><div class="face right"></div><div class="face top"></div><div class="face bottom"></div><div class="wall-label">'+label+'</div>';
   }else if(cls==='door3d'){
     d.classList.add('architect-door3d');
