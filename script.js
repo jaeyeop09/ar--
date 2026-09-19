@@ -338,4 +338,4 @@ document.getElementById("placeAr").onclick=()=>{
   const roof=document.createElement("div");roof.className="ar-roof";preview.appendChild(roof);
 };
 
-update(); render3D();
+if(!canvas.querySelector(".piece")) createDefaultRoom(); else { update(); render3D(); }
