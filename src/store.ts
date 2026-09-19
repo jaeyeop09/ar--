@@ -1,0 +1,4 @@
+import{create}from"zustand";import type{BuildingObject}from"./types";
+type Tool=BuildingObject["type"]|"select";
+interface State{objects:BuildingObject[];selectedId:string|null;view:"2D"|"3D";tool:Tool;add:(o:BuildingObject)=>void;update:(id:string,c:Partial<BuildingObject>)=>void;select:(id:string|null)=>void;setView:(v:"2D"|"3D")=>void;setTool:(t:Tool)=>void;clear:()=>void}
+export const useStore=create<State>((set)=>({objects:[],selectedId:null,view:"2D",tool:"wall",add:o=>set(s=>({objects:[...s.objects,o]})),update:(id,c)=>set(s=>({objects:s.objects.map(o=>o.id===id?{...o,...c}:o)})),select:id=>set({selectedId:id}),setView:view=>set({view}),setTool:tool=>set({tool}),clear:()=>set({objects:[],selectedId:null})}));
