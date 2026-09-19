@@ -1,341 +1,47 @@
-const canvas = document.getElementById("canvas");
-let selected = null, drag = null, history = [], future = [];
-let snap = 2, gridOn = true, zoom = 1, view = "2d";
-let camera = { x: 58, z: -28, scale: 1 };
-
-const names = {
-  floor:"바닥", wall:"벽", column:"기둥", roof:"지붕", window:"창문",
-  door:"문", stairs:"계단", balcony:"발코니", solar:"태양광",
-  tree:"나무", bench:"벤치", lamp:"조명", plant:"화분",
-  sofa:"소파", table:"테이블", bed:"침대", cabinet:"수납장"
-};
-const icon = {tree:"🌳",lamp:"💡",plant:"🪴",sofa:"▰",table:"▱",bed:"▭",cabinet:"▤"};
-
-function snapTo(v){ return Math.round(v / snap) * snap; }
-function setStatus(t){
-  const s=document.getElementById("status");
-  s.textContent=t;
-  clearTimeout(window.statusTimer);
-  window.statusTimer=setTimeout(()=>s.textContent=gridOn?"2cm 스냅 ON":"모눈 OFF",1300);
-}
-function snapshot(){
-  return [...canvas.querySelectorAll(".piece")].map(p=>({
-    type:p.dataset.type, x:p.offsetLeft, y:p.offsetTop,
-    rot:+(p.dataset.rot||0), w:p.offsetWidth, h:p.offsetHeight
-  }));
-}
-function restore(state){
-  canvas.innerHTML="";
-  state.forEach(s=>addPiece(s.type,s.x,s.y,false,s.rot));
-  selected=null; 
-document.getElementById("openUrl")?.addEventListener("click",()=>{
-  const url=document.getElementById("appUrl")?.value.trim();
-  if(url) window.open(url,"_blank","noopener,noreferrer");
-  else setStatus("AR 앱 주소를 입력하세요");
-});
-
-if(!canvas.querySelector(".piece")) createDefaultRoom(); else { update(); render3D(); }
-}
-function save(){ history.push(snapshot()); if(history.length>50)history.shift(); future=[]; }
-
-function addPiece(type,x,y,record=true,rot=0,w=null,h=null){
-  if(record) save();
-  const el=document.createElement("div");
-  el.className="piece "+type;
-  el.dataset.type=type;
-  el.dataset.rot=rot;
-  el.style.left=Math.max(0,snapTo(x))+"px";
-  el.style.top=Math.max(0,snapTo(y))+"px";
-  el.style.transform=`rotate(${rot}deg)`;
-  if(icon[type]) el.textContent=icon[type];
-  if(w!=null) el.style.width=w+"px";
-  if(h!=null) el.style.height=h+"px";
-  canvas.appendChild(el);
-  bindPiece(el);
-  select(el);
-  update();
-  render3D();
-  return el;
-}
-function bindPiece(el){
-  el.addEventListener("pointerdown",e=>{
-    if(view!=="2d") return;
-    e.preventDefault(); e.stopPropagation(); select(el);
-    drag={el,sx:e.clientX,sy:e.clientY,ox:el.offsetLeft,oy:el.offsetTop};
-    el.setPointerCapture(e.pointerId);
-  });
-  el.addEventListener("pointermove",e=>{
-    if(!drag||drag.el!==el)return;
-    const dx=(e.clientX-drag.sx)/zoom, dy=(e.clientY-drag.sy)/zoom;
-    const x=Math.max(0,Math.min(canvas.clientWidth-el.offsetWidth,snapTo(drag.ox+dx)));
-    const y=Math.max(0,Math.min(canvas.clientHeight-el.offsetHeight,snapTo(drag.oy+dy)));
-    el.style.left=x+"px"; el.style.top=y+"px"; showInfo(el);
-  });
-  el.addEventListener("pointerup",()=>{
-    if(!drag)return;
-    drag=null; setStatus("2cm 단위로 배치됨"); update(); render3D();
-  });
-  el.addEventListener("click",e=>{e.stopPropagation();select(el);});
-  el.addEventListener("dblclick",()=>deleteSelected(el));
-}
-function select(el){
-  document.querySelectorAll(".piece.selected").forEach(x=>x.classList.remove("selected"));
-  selected=el;
-  if(el)el.classList.add("selected");
-  showInfo(el);
-}
-function showInfo(el){
-  const box=document.getElementById("selectedInfo");
-  if(!el){box.textContent="요소를 선택하면 위치·크기를 확인할 수 있어요.";return;}
-  const x=(el.offsetLeft/100).toFixed(2), y=(el.offsetTop/100).toFixed(2);
-  const w=(el.offsetWidth/100).toFixed(2), h=(el.offsetHeight/100).toFixed(2);
-  box.innerHTML=`<b style="color:#e2e8f0">${names[el.dataset.type]}</b><br>
-  <span style="color:#94a3b8">좌표 X ${x}m · Y ${y}m<br>
-  크기 ${w}m × ${h}m<br>회전 ${+(el.dataset.rot||0)}°</span>`;
-}
-function update(){
-  const all=[...canvas.querySelectorAll(".piece")], c={};
-  all.forEach(p=>c[p.dataset.type]=(c[p.dataset.type]||0)+1);
-  document.getElementById("count").textContent=all.length;
-  document.getElementById("columns").textContent=c.column||0;
-  document.getElementById("walls").textContent=c.wall||0;
-  document.getElementById("floors").textContent=c.floor||0;
-
-  const checks=[
-    (c.column||0)>=4,(c.wall||0)>=2,(c.floor||0)>=1,
-    (c.column||0)>=1&&(c.wall||0)>=1
-  ];
-  checks.forEach((ok,i)=>{
-    const el=document.getElementById("m"+(i+1));
-    const labels=["기둥 4개 이상","벽 2개 이상","바닥 1개 이상","구조 요소 함께 사용"];
-    el.className=ok?"ok":"";
-    el.textContent=(ok?"✓ ":"○ ")+labels[i];
-  });
-  document.getElementById("score").textContent=checks.filter(Boolean).length+" / 4 조건";
-}
-function addFromTool(type){
-  if(view==="3d")setView("2d");
-  const x=snapTo(canvas.clientWidth/2-50+(Math.random()*80-40));
-  const y=snapTo(canvas.clientHeight/2-40+(Math.random()*80-40));
-  addPiece(type,x,y);
-  setStatus(names[type]+" 추가됨");
-}
-function deleteSelected(el=selected){
-  if(!el)return;
-  save(); el.remove(); selected=null; update(); render3D(); setStatus("요소 삭제됨");
-}
-
-document.querySelectorAll(".tool").forEach(t=>{
-  t.addEventListener("click",()=>addFromTool(t.dataset.type));
-  t.addEventListener("dragstart",e=>e.dataTransfer.setData("type",t.dataset.type));
-});
-canvas.addEventListener("dragover",e=>e.preventDefault());
-canvas.addEventListener("drop",e=>{
-  e.preventDefault();
-  const type=e.dataTransfer.getData("type");
-  if(!type)return;
-  const r=canvas.getBoundingClientRect();
-  addPiece(type,snapTo((e.clientX-r.left)/zoom-30),snapTo((e.clientY-r.top)/zoom-30));
-});
-canvas.addEventListener("click",()=>select(null));
-
-document.getElementById("rotate").onclick=()=>{
-  if(!selected)return;
-  save();
-  const r=(+(selected.dataset.rot||0)+90)%360;
-  selected.dataset.rot=r; selected.style.transform=`rotate(${r}deg)`;
-  showInfo(selected); render3D(); setStatus("90° 회전");
-};
-document.getElementById("delete").onclick=()=>deleteSelected();
-document.addEventListener("keydown",e=>{
-  if(e.key==="Delete")deleteSelected();
-  if(e.key.toLowerCase()==="r")document.getElementById("rotate").click();
-});
-document.getElementById("undoBtn").onclick=()=>{
-  if(!history.length)return;
-  future.push(snapshot()); restore(history.pop()); setStatus("실행 취소");
-};
-document.getElementById("redoBtn").onclick=()=>{
-  if(!future.length)return;
-  history.push(snapshot()); restore(future.pop()); setStatus("다시 실행");
-};
-document.getElementById("newBtn").onclick=()=>{
-  if(confirm("현재 설계를 모두 지울까요?")){
-    save(); createDefaultRoom(); setStatus("새 6×6m 설계 시작");
-  }
-};
-document.getElementById("gridBtn").onclick=()=>{
-  gridOn=!gridOn;
-  canvas.classList.toggle("grid-off",!gridOn);
-  document.getElementById("gridBtn").textContent=gridOn?"▦ 2cm 모눈":"▦ 모눈 OFF";
-  document.getElementById("snapPill").textContent=gridOn?"SNAP 2cm":"SNAP OFF";
-  setStatus(gridOn?"2cm 스냅 ON":"모눈 OFF");
-};
-document.getElementById("search").addEventListener("input",e=>{
-  const q=e.target.value.trim();
-  document.querySelectorAll(".tool").forEach(t=>t.style.display=!q||t.textContent.includes(q)?"":"none");
-});
-canvas.addEventListener("wheel",e=>{
-  if(!e.ctrlKey){e.preventDefault();zoom=Math.max(.7,Math.min(1.5,zoom+(e.deltaY<0?.08:-.08)));canvas.style.transform=`scale(${zoom})`;setStatus("확대 "+Math.round(zoom*100)+"%");}
-},{passive:false});
-
-document.getElementById("check").onclick=()=>{
-  const c={};canvas.querySelectorAll(".piece").forEach(p=>c[p.dataset.type]=(c[p.dataset.type]||0)+1);
-  const ok=[(c.column||0)>=4,(c.wall||0)>=2,(c.floor||0)>=1,(c.column||0)>=1&&(c.wall||0)>=1];
-  const n=ok.filter(Boolean).length, r=document.getElementById("result");
-  r.textContent=n===4?"✓ SUCCESS · 내진 미션 통과":"✕ FAIL · "+n+"/4 조건 충족";
-  r.style.color=n===4?"#10b981":"#ef4444";
-  setStatus(n===4?"미션 성공!":"조건을 더 충족해 보세요");
-};
-
-function createDefaultRoom(){
-  canvas.innerHTML="";
-  selected=null;
-  const ox=150, oy=10, size=600, t=20;
-  addPiece("floor",ox,oy,false,0,size,size);
-
-  // Four 6m perimeter walls. Vertical walls use a 20x600 footprint;
-  // render3D converts the long dimension into the wall length automatically.
-  addPiece("wall",ox,oy,false,0,size,t);
-  addPiece("wall",ox,oy+size-t,false,0,size,t);
-  addPiece("wall",ox,oy,false,0,t,size);
-  addPiece("wall",ox+size-t,oy,false,0,t,size);
-
-  // Four corner columns for the simplified educational seismic mission.
-  addPiece("column",ox-2,oy-2,false,0,24,24);
-  addPiece("column",ox+size-t-2,oy-2,false,0,24,24);
-  addPiece("column",ox-2,oy+size-t-2,false,0,24,24);
-  addPiece("column",ox+size-t-2,oy+size-t-2,false,0,24,24);
-
-  update();
-  render3D();
-  setStatus("6×6m 기본 방이 생성됐습니다");
-}
-
-function setView(next){
-  view=next;
-  const is3=next==="3d";
-  document.getElementById("canvas").style.display=is3?"none":"block";
-  document.getElementById("scene3d").classList.toggle("show",is3);
-  document.querySelector(".canvas-wrap").classList.toggle("mode-3d",is3);
-  document.getElementById("view2d").classList.toggle("active",!is3);
-  document.getElementById("view3d").classList.toggle("active",is3);
-  document.getElementById("legend").textContent=is3
-    ?"🖱️ 3D 드래그: 시점 회전 · 휠: 확대/축소 · 카메라 버튼 사용"
-    :"🖱️ 드래그 이동 · ↻ 회전 · DEL 삭제 · 📐 2cm 스냅 · 휠 확대/축소";
-  if(is3)render3D();
-  setStatus(is3?"3D Floor Planner 보기":"2D 평면도 보기");
-}
-document.getElementById("view2d").onclick=()=>setView("2d");
-document.getElementById("view3d").onclick=()=>setView("3d");
-
-const scene=document.getElementById("scene3d");
-const world=document.getElementById("sceneWorld");
-function applyCamera(mode){
-  const presets={iso:[58,-28,1],top:[88,0,1.05],walk:[22,-12,1.12]};
-  const p=presets[mode]||presets.iso;
-  camera={x:p[0],z:p[1],scale:p[2]};
-  world.style.transform=`translate(-50%,-50%) rotateX(${camera.x}deg) rotateZ(${camera.z}deg) scale(${camera.scale})`;
-  ["camIso","camTop","camWalk"].forEach(id=>document.getElementById(id)?.classList.remove("active"));
-  document.getElementById(mode==="iso"?"camIso":mode==="top"?"camTop":"camWalk")?.classList.add("active");
-}
-function orbitScene(dx,dy){
-  camera.z+=dx*.35;
-  camera.x=Math.max(28,Math.min(88,camera.x-dy*.25));
-  world.style.transform=`translate(-50%,-50%) rotateX(${camera.x}deg) rotateZ(${camera.z}deg) scale(${camera.scale})`;
-}
-function create3DObject(type,p){
-  const x=p.offsetLeft, y=p.offsetTop, w=p.offsetWidth, h=p.offsetHeight, rot=+(p.dataset.rot||0);
-  const d=document.createElement("div");
-  d.className="obj3 "+type+"3d";
-  d.style.left=(x+w/2)+"px";
-  d.style.top=(y+h/2)+"px";
-  d.style.setProperty("--w",Math.max(20,w)+"px");
-  d.style.setProperty("--d",Math.max(14,h)+"px");
-  d.style.setProperty("--rot",rot+"deg");
-
-  if(type==="wall"){
-    const length=Math.max(w,h);
-    const depth=Math.min(w,h);
-    const wallRot=rot+(h>w?90:0);
-    d.className+=" wall-solid";
-    d.style.setProperty("--length",length+"px");
-    d.style.setProperty("--depth",Math.max(14,depth)+"px");
-    d.style.setProperty("--h","300px");
-    d.style.setProperty("--wallrot",wallRot+"deg");
-    d.innerHTML='<div class="wall-main"></div><div class="wall-side"></div><div class="wall-top"></div>';
-  }else if(type==="column"){
-    d.className+=" column-solid";
-    d.style.setProperty("--h","260px");
-    d.style.setProperty("--size","24px");
-    d.innerHTML='<div class="column-main"></div><div class="column-top"></div>';
-  }else if(type==="door"){
-    d.style.setProperty("--w",Math.max(90,w)+"px");
-    d.style.setProperty("--h","210px");
-    d.innerHTML='<div class="door-panel"></div><div class="door-frame"></div><span class="door-knob">●</span>';
-  }else if(type==="window"){
-    d.style.setProperty("--w",Math.max(120,w)+"px");
-    d.style.setProperty("--h","120px");
-    d.innerHTML='<div class="window-glass"></div><div class="window-frame"></div><i class="window-cross"></i>';
-  }else if(type==="roof"){
-    d.style.setProperty("--w",Math.max(120,w)+"px");
-    d.style.setProperty("--d",Math.max(80,h)+"px");
-    d.innerHTML='<div class="roof-slab"></div><div class="roof-ridge"></div>';
-  }else{
-    d.textContent=icon[type]||"";
-  }
-  return d;
-}
-function render3D(){
-  if(!world)return;
-  world.innerHTML="";
-  const floor=document.createElement("div");
-  floor.className="floor3d";
-  world.appendChild(floor);
-  canvas.querySelectorAll(".piece").forEach(p=>world.appendChild(create3DObject(p.dataset.type,p)));
-  applyCamera(document.querySelector(".scene-toolbar .active")?.id==="camTop"?"top":document.querySelector(".scene-toolbar .active")?.id==="camWalk"?"walk":"iso");
-}
-scene.addEventListener("pointerdown",e=>{if(view!=="3d")return;scene.setPointerCapture(e.pointerId);scene._drag={x:e.clientX,y:e.clientY};});
-scene.addEventListener("pointermove",e=>{
-  if(!scene._drag||view!=="3d")return;
-  orbitScene(e.clientX-scene._drag.x,e.clientY-scene._drag.y);
-  scene._drag={x:e.clientX,y:e.clientY};
-});
-scene.addEventListener("pointerup",()=>scene._drag=null);
-scene.addEventListener("pointercancel",()=>scene._drag=null);
-scene.addEventListener("wheel",e=>{
-  if(view!=="3d")return;
-  e.preventDefault();
-  camera.scale=Math.max(.65,Math.min(1.6,camera.scale+(e.deltaY<0?.06:-.06)));
-  world.style.transform=`translate(-50%,-50%) rotateX(${camera.x}deg) rotateZ(${camera.z}deg) scale(${camera.scale})`;
-},{passive:false});
-
-document.getElementById("camIso").onclick=()=>applyCamera("iso");
-document.getElementById("camTop").onclick=()=>applyCamera("top");
-document.getElementById("camWalk").onclick=()=>applyCamera("walk");
-document.getElementById("camReset").onclick=()=>applyCamera("iso");
-
-document.getElementById("arMode").onclick=()=>document.getElementById("arMode2").click();
-document.getElementById("arMode2").onclick=async()=>{
-  const modal=document.getElementById("arModal"), video=document.getElementById("camera");
-  modal.classList.add("open"); modal.setAttribute("aria-hidden","false");
-  try{
-    const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});
-    video.srcObject=stream; document.getElementById("arMessage").textContent="카메라가 준비됐습니다. 배치를 눌러 미리보기를 표시하세요.";
-  }catch(err){document.getElementById("arMessage").textContent="카메라 권한이 없어 AR 미리보기 화면으로 실행됩니다.";}
-};
-document.getElementById("closeAr").onclick=()=>{
-  const v=document.getElementById("camera");
-  if(v.srcObject)v.srcObject.getTracks().forEach(t=>t.stop());
-  document.getElementById("arModal").classList.remove("open");
-  document.getElementById("arModal").setAttribute("aria-hidden","true");
-};
-document.getElementById("placeAr").onclick=()=>{
-  const preview=document.getElementById("arPreview");
-  preview.innerHTML="";
-  const count=Math.min(6,canvas.querySelectorAll(".piece").length||1);
-  for(let i=0;i<count;i++){const c=document.createElement("div");c.className="ar-cube";c.style.left=(20+(i%3)*52)+"px";c.style.bottom=(8+Math.floor(i/3)*45)+"px";preview.appendChild(c);}
-  const roof=document.createElement("div");roof.className="ar-roof";preview.appendChild(roof);
-};
-
-if(!canvas.querySelector(".piece")) createDefaultRoom(); else { update(); render3D(); }
+const canvas=document.getElementById("canvas");
+let selected=null,drag=null,history=[],future=[];
+let snap=2,gridOn=true,zoom=1,view="2d";
+let camera={x:48,z:-28,scale:1};
+const names={floor:"바닥",wall:"벽",column:"기둥",roof:"지붕",window:"창문",door:"문",stairs:"계단",balcony:"발코니",solar:"태양광",tree:"나무",bench:"벤치",lamp:"조명",plant:"화분",sofa:"소파",table:"테이블",bed:"침대",cabinet:"수납장"};
+const icon={tree:"🌳",lamp:"💡",plant:"🪴",sofa:"▰",table:"▱",bed:"▭",cabinet:"▤"};
+function snapTo(v){return Math.round(v/snap)*snap}
+function setStatus(t){const s=document.getElementById("status");if(!s)return;s.textContent=t;clearTimeout(window.statusTimer);window.statusTimer=setTimeout(()=>s.textContent=gridOn?"2cm 스냅 ON":"모눈 OFF",1300)}
+function snapshot(){return [...canvas.querySelectorAll(".piece")].map(p=>({type:p.dataset.type,x:p.offsetLeft,y:p.offsetTop,rot:+(p.dataset.rot||0),w:p.offsetWidth,h:p.offsetHeight}))}
+function restore(state){canvas.innerHTML="";state.forEach(s=>addPiece(s.type,s.x,s.y,false,s.rot,s.w,s.h));selected=null;update();render3D()}
+function save(){history.push(snapshot());if(history.length>50)history.shift();future=[]}
+function addPiece(type,x,y,record=true,rot=0,w=null,h=null){if(record)save();const el=document.createElement("div");el.className="piece "+type;el.dataset.type=type;el.dataset.rot=rot;el.style.left=Math.max(0,snapTo(x))+"px";el.style.top=Math.max(0,snapTo(y))+"px";el.style.transform=`rotate(${rot}deg)`;if(icon[type])el.textContent=icon[type];if(w!=null)el.style.width=w+"px";if(h!=null)el.style.height=h+"px";canvas.appendChild(el);bindPiece(el);select(el);update();render3D();return el}
+function bindPiece(el){el.addEventListener("pointerdown",e=>{if(view!=="2d")return;e.preventDefault();e.stopPropagation();select(el);drag={el,sx:e.clientX,sy:e.clientY,ox:el.offsetLeft,oy:el.offsetTop};el.setPointerCapture(e.pointerId)});el.addEventListener("pointermove",e=>{if(!drag||drag.el!==el)return;const dx=(e.clientX-drag.sx)/zoom,dy=(e.clientY-drag.sy)/zoom;el.style.left=Math.max(0,Math.min(canvas.clientWidth-el.offsetWidth,snapTo(drag.ox+dx)))+"px";el.style.top=Math.max(0,Math.min(canvas.clientHeight-el.offsetHeight,snapTo(drag.oy+dy)))+"px";showInfo(el)});el.addEventListener("pointerup",()=>{if(!drag)return;drag=null;setStatus("2cm 단위로 배치됨");update();render3D()});el.addEventListener("click",e=>{e.stopPropagation();select(el)});el.addEventListener("dblclick",()=>deleteSelected(el))}
+function select(el){document.querySelectorAll(".piece.selected").forEach(x=>x.classList.remove("selected"));selected=el;if(el)el.classList.add("selected");showInfo(el)}
+function showInfo(el){const box=document.getElementById("selectedInfo");if(!box)return;if(!el){box.textContent="요소를 선택하면 위치·크기를 확인할 수 있어요.";return}box.innerHTML=`<b style="color:#e2e8f0">${names[el.dataset.type]}</b><br><span style="color:#94a3b8">좌표 X ${(el.offsetLeft/100).toFixed(2)}m · Y ${(el.offsetTop/100).toFixed(2)}m<br>크기 ${(el.offsetWidth/100).toFixed(2)}m × ${(el.offsetHeight/100).toFixed(2)}m<br>회전 ${+(el.dataset.rot||0)}°</span>`}
+function update(){const all=[...canvas.querySelectorAll(".piece")],c={};all.forEach(p=>c[p.dataset.type]=(c[p.dataset.type]||0)+1);document.getElementById("count").textContent=all.length;document.getElementById("columns").textContent=c.column||0;document.getElementById("walls").textContent=c.wall||0;document.getElementById("floors").textContent=c.floor||0;const checks=[(c.column||0)>=4,(c.wall||0)>=2,(c.floor||0)>=1,(c.column||0)>=1&&(c.wall||0)>=1];const labels=["기둥 4개 이상","벽 2개 이상","바닥 1개 이상","구조 요소 함께 사용"];checks.forEach((ok,i)=>{const el=document.getElementById("m"+(i+1));if(el){el.className=ok?"ok":"";el.textContent=(ok?"✓ ":"○ ")+labels[i]}});const score=document.getElementById("score");if(score)score.textContent=checks.filter(Boolean).length+" / 4 조건"}
+function addFromTool(type){if(view==="3d")setView("2d");const x=snapTo(canvas.clientWidth/2-50+(Math.random()*80-40)),y=snapTo(canvas.clientHeight/2-40+(Math.random()*80-40));addPiece(type,x,y);setStatus(names[type]+" 추가됨")}
+function deleteSelected(el=selected){if(!el)return;save();el.remove();selected=null;update();render3D();setStatus("요소 삭제됨")}
+document.querySelectorAll(".tool").forEach(t=>{t.addEventListener("click",()=>addFromTool(t.dataset.type));t.addEventListener("dragstart",e=>e.dataTransfer.setData("type",t.dataset.type))});
+canvas.addEventListener("dragover",e=>e.preventDefault());canvas.addEventListener("drop",e=>{e.preventDefault();const type=e.dataTransfer.getData("type");if(!type)return;const r=canvas.getBoundingClientRect();addPiece(type,snapTo((e.clientX-r.left)/zoom-30),snapTo((e.clientY-r.top)/zoom-30))});canvas.addEventListener("click",()=>select(null));
+document.getElementById("rotate").onclick=()=>{if(!selected)return;save();const r=(+(selected.dataset.rot||0)+90)%360;selected.dataset.rot=r;selected.style.transform=`rotate(${r}deg)`;showInfo(selected);render3D();setStatus("90° 회전")};document.getElementById("delete").onclick=()=>deleteSelected();document.addEventListener("keydown",e=>{if(e.key==="Delete")deleteSelected();if(e.key.toLowerCase()==="r")document.getElementById("rotate").click()});
+document.getElementById("undoBtn").onclick=()=>{if(!history.length)return;future.push(snapshot());restore(history.pop());setStatus("실행 취소")};document.getElementById("redoBtn").onclick=()=>{if(!future.length)return;history.push(snapshot());restore(future.pop());setStatus("다시 실행")};
+document.getElementById("newBtn").onclick=()=>{if(confirm("현재 설계를 모두 지울까요?")){save();createDefaultRoom();setStatus("새 6×6m 설계 시작")}};
+document.getElementById("gridBtn").onclick=()=>{gridOn=!gridOn;canvas.classList.toggle("grid-off",!gridOn);document.getElementById("gridBtn").textContent=gridOn?"▦ 2cm 모눈":"▦ 모눈 OFF";document.getElementById("snapPill").textContent=gridOn?"SNAP 2cm":"SNAP OFF";setStatus(gridOn?"2cm 스냅 ON":"모눈 OFF")};
+document.getElementById("search").addEventListener("input",e=>{const q=e.target.value.trim();document.querySelectorAll(".tool").forEach(t=>t.style.display=!q||t.textContent.includes(q)?"":"none")});canvas.addEventListener("wheel",e=>{if(!e.ctrlKey){e.preventDefault();zoom=Math.max(.7,Math.min(1.5,zoom+(e.deltaY<0?.08:-.08)));canvas.style.transform=`scale(${zoom})`;setStatus("확대 "+Math.round(zoom*100)+"%")}}, {passive:false});
+document.getElementById("check").onclick=()=>{const c={};canvas.querySelectorAll(".piece").forEach(p=>c[p.dataset.type]=(c[p.dataset.type]||0)+1);const ok=[(c.column||0)>=4,(c.wall||0)>=2,(c.floor||0)>=1,(c.column||0)>=1&&(c.wall||0)>=1],n=ok.filter(Boolean).length,r=document.getElementById("result");r.textContent=n===4?"✓ SUCCESS · 내진 미션 통과":"✕ FAIL · "+n+"/4 조건 충족";r.style.color=n===4?"#10b981":"#ef4444";setStatus(n===4?"미션 성공!":"조건을 더 충족해 보세요")};
+function createDefaultRoom(){canvas.innerHTML="";selected=null;const ox=150,oy=10,size=600,t=20;addPiece("floor",ox,oy,false,0,size,size);addPiece("wall",ox,oy,false,0,size,t);addPiece("wall",ox,oy+size-t,false,0,size,t);addPiece("wall",ox,oy,false,0,t,size);addPiece("wall",ox+size-t,oy,false,0,t,size);addPiece("column",ox-2,oy-2,false,0,24,24);addPiece("column",ox+size-t-2,oy-2,false,0,24,24);addPiece("column",ox-2,oy+size-t-2,false,0,24,24);addPiece("column",ox+size-t-2,oy+size-t-2,false,0,24,24);update();render3D();setStatus("6×6m 기본 방이 생성됐습니다")}
+function setView(next){view=next;const is3=next==="3d";document.getElementById("canvas").style.display=is3?"none":"block";document.getElementById("scene3d").classList.toggle("show",is3);document.querySelector(".canvas-wrap").classList.toggle("mode-3d",is3);document.getElementById("view2d").classList.toggle("active",!is3);document.getElementById("view3d").classList.toggle("active",is3);document.getElementById("legend").textContent=is3?"🖱️ 3D 드래그: 시점 회전 · 휠: 확대/축소 · 카메라 버튼 사용":"🖱️ 드래그 이동 · ↻ 회전 · DEL 삭제 · 📐 2cm 스냅 · 휠 확대/축소";if(is3)render3D();setStatus(is3?"3D Floor Planner 보기":"2D 평면도 보기")}
+document.getElementById("view2d").onclick=()=>setView("2d");document.getElementById("view3d").onclick=()=>setView("3d");
+const scene=document.getElementById("scene3d"),world=document.getElementById("sceneWorld");
+function applyCamera(mode){const presets={iso:[48,-28,1],top:[82,0,1.05],walk:[18,-12,1.08]},p=presets[mode]||presets.iso;camera={x:p[0],z:p[1],scale:p[2]};world.style.transform=`translate(-50%,-50%) rotateX(${camera.x}deg) rotateZ(${camera.z}deg) scale(${camera.scale})`;["camIso","camTop","camWalk"].forEach(id=>document.getElementById(id)?.classList.remove("active"));document.getElementById(mode==="iso"?"camIso":mode==="top"?"camTop":"camWalk")?.classList.add("active")}
+function orbitScene(dx,dy){camera.z+=dx*.35;camera.x=Math.max(28,Math.min(88,camera.x-dy*.25));world.style.transform=`translate(-50%,-50%) rotateX(${camera.x}deg) rotateZ(${camera.z}deg) scale(${camera.scale})`}
+function faceStyle(extra){return `position:absolute;box-sizing:border-box;${extra}`}
+function create3DObject(type,p){const x=p.offsetLeft,y=p.offsetTop,w=p.offsetWidth,h=p.offsetHeight,rot=+(p.dataset.rot||0);const d=document.createElement("div");d.className="obj3 "+type+"3d";d.style.position="absolute";d.style.left=(x+w/2)+"px";d.style.top=(y+h/2)+"px";d.style.width="0px";d.style.height="0px";d.style.transformStyle="preserve-3d";d.style.pointerEvents="none";
+if(type==="wall"){const length=Math.max(w,h),depth=Math.max(16,Math.min(w,h)),H=300,wallRot=rot+(h>w?90:0);d.style.transform=`translate(-50%,-50%) rotateZ(${wallRot}deg)`;const front=document.createElement("div");front.style.cssText=faceStyle(`left:${-length/2}px;top:${-H}px;width:${length}px;height:${H}px;transform-origin:50% 100%;transform:rotateX(90deg);background:linear-gradient(90deg,#94a3af,#f8fafc 18%,#dbe3ea 70%,#aeb9c5);border:2px solid #64748b;box-shadow:0 8px 16px #33415555`);const back=document.createElement("div");back.style.cssText=faceStyle(`left:${-length/2}px;top:${-H}px;width:${length}px;height:${H}px;transform-origin:50% 100%;transform:rotateX(90deg) translateZ(${depth}px);background:#b6c0ca;border:1px solid #64748b`);const top=document.createElement("div");top.style.cssText=faceStyle(`left:${-length/2}px;top:${-depth/2}px;width:${length}px;height:${depth}px;transform:translateZ(${H}px);background:#f8fafc;border:2px solid #64748b`);d.append(front,back,top)}
+else if(type==="column"){const S=24,H=260;d.style.transform="translate(-50%,-50%)";const front=document.createElement("div");front.style.cssText=faceStyle(`left:${-S/2}px;top:${-H}px;width:${S}px;height:${H}px;transform-origin:50% 100%;transform:rotateX(90deg);background:linear-gradient(90deg,#687585,#f1f5f9 35%,#94a3b8);border:2px solid #475569;box-shadow:0 7px 12px #33415555`);const top=document.createElement("div");top.style.cssText=faceStyle(`left:${-S/2}px;top:${-S/2}px;width:${S}px;height:${S}px;transform:translateZ(${H}px);background:#f8fafc;border:2px solid #475569`);d.append(front,top)}
+else if(type==="floor"){d.style.width=w+"px";d.style.height=h+"px";d.style.transform=`translate(-50%,-50%) rotateZ(${rot}deg)`;d.style.background="#f1f5f9";d.style.backgroundImage="linear-gradient(#cbd5e1 1px,transparent 1px),linear-gradient(90deg,#cbd5e1 1px,transparent 1px)";d.style.backgroundSize="20px 20px";d.style.border="4px solid #64748b";d.style.boxShadow="0 28px 45px #33415544"}
+else if(type==="door"||type==="window"){const W=Math.max(type==="door"?90:120,w),H=type==="door"?210:120;d.style.width=W+"px";d.style.height=H+"px";d.style.transform=`translate(-50%,-100%) rotateZ(${rot}deg) rotateX(90deg)`;d.style.transformOrigin="50% 100%";d.style.background=type==="door"?"#7c4a2a":"#60a5fa";d.style.border="4px solid #334155"}
+else if(type==="roof"){d.style.width=Math.max(120,w)+"px";d.style.height=Math.max(80,h)+"px";d.style.transform=`translate(-50%,-50%) rotateZ(${rot}deg) translateZ(300px)`;d.style.background="#b4533d";d.style.border="3px solid #6b2717";d.style.clipPath="polygon(50% 0,100% 70%,90% 100%,10% 100%,0 70%)"}
+else{d.style.width=Math.max(50,w)+"px";d.style.height=Math.max(35,h)+"px";d.style.transform=`translate(-50%,-50%) rotateZ(${rot}deg) translateZ(25px)`;d.style.display="grid";d.style.placeItems="center";d.style.fontSize="28px";d.textContent=icon[type]||""}
+return d}
+function render3D(){if(!world)return;world.innerHTML="";canvas.querySelectorAll(".piece").forEach(p=>world.appendChild(create3DObject(p.dataset.type,p)));applyCamera(document.querySelector(".scene-toolbar .active")?.id==="camTop"?"top":document.querySelector(".scene-toolbar .active")?.id==="camWalk"?"walk":"iso")}
+scene.addEventListener("pointerdown",e=>{if(view!=="3d")return;scene.setPointerCapture(e.pointerId);scene._drag={x:e.clientX,y:e.clientY}});scene.addEventListener("pointermove",e=>{if(!scene._drag||view!=="3d")return;orbitScene(e.clientX-scene._drag.x,e.clientY-scene._drag.y);scene._drag={x:e.clientX,y:e.clientY}});scene.addEventListener("pointerup",()=>scene._drag=null);scene.addEventListener("pointercancel",()=>scene._drag=null);scene.addEventListener("wheel",e=>{if(view!=="3d")return;e.preventDefault();camera.scale=Math.max(.65,Math.min(1.6,camera.scale+(e.deltaY<0?.06:-.06)));world.style.transform=`translate(-50%,-50%) rotateX(${camera.x}deg) rotateZ(${camera.z}deg) scale(${camera.scale})`},{passive:false});
+document.getElementById("camIso").onclick=()=>applyCamera("iso");document.getElementById("camTop").onclick=()=>applyCamera("top");document.getElementById("camWalk").onclick=()=>applyCamera("walk");document.getElementById("camReset").onclick=()=>applyCamera("iso");
+document.getElementById("arMode").onclick=()=>document.getElementById("arMode2").click();document.getElementById("arMode2").onclick=async()=>{const modal=document.getElementById("arModal"),video=document.getElementById("camera");modal.classList.add("open");modal.setAttribute("aria-hidden","false");try{const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false});video.srcObject=stream;document.getElementById("arMessage").textContent="카메라가 준비됐습니다. 배치를 눌러 미리보기를 표시하세요."}catch(err){document.getElementById("arMessage").textContent="카메라 권한이 없어 AR 미리보기 화면으로 실행됩니다."}};document.getElementById("closeAr").onclick=()=>{const v=document.getElementById("camera");if(v.srcObject)v.srcObject.getTracks().forEach(t=>t.stop());document.getElementById("arModal").classList.remove("open");document.getElementById("arModal").setAttribute("aria-hidden","true")};document.getElementById("placeAr").onclick=()=>{const preview=document.getElementById("arPreview");preview.innerHTML="";const count=Math.min(6,canvas.querySelectorAll(".piece").length||1);for(let i=0;i<count;i++){const c=document.createElement("div");c.className="ar-cube";c.style.left=(20+(i%3)*52)+"px";c.style.bottom=(8+Math.floor(i/3)*45)+"px";preview.appendChild(c)}const roof=document.createElement("div");roof.className="ar-roof";preview.appendChild(roof)};
+document.getElementById("openUrl")?.addEventListener("click",()=>{const url=document.getElementById("appUrl")?.value.trim();if(url)window.open(url,"_blank","noopener,noreferrer");else setStatus("AR 앱 주소를 입력하세요")});
+if(!canvas.querySelector(".piece"))createDefaultRoom();else{update();render3D()}
