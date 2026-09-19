@@ -27,7 +27,14 @@ function snapshot(){
 function restore(state){
   canvas.innerHTML="";
   state.forEach(s=>addPiece(s.type,s.x,s.y,false,s.rot));
-  selected=null; update(); render3D();
+  selected=null; 
+document.getElementById("openUrl")?.addEventListener("click",()=>{
+  const url=document.getElementById("appUrl")?.value.trim();
+  if(url) window.open(url,"_blank","noopener,noreferrer");
+  else setStatus("AR 앱 주소를 입력하세요");
+});
+
+update(); render3D();
 }
 function save(){ history.push(snapshot()); if(history.length>50)history.shift(); future=[]; }
 
