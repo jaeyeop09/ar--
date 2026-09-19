@@ -1,8 +1,84 @@
-import{useState}from"react";import{Stage,Layer,Rect,Line,Text}from"react-konva";import{useStore}from"../store";
-const snap=(n:number)=>Math.round(n/20)*20;
-const sizes=(type:string)=>type==="wall"||type==="seismicWall"?{width:160,depth:20,height:3}:type==="floor"?{width:600,depth:400,height:.1}:{width:60,depth:60,height:3};
-const fill=(type:string)=>type==="wall"?"#334155":type==="seismicWall"?"#10b981":type==="column"?"#64748b":type==="damper"?"#f59e0b":type==="floor"?"#cbd5e1":"#94a3b8";
-export default function Canvas2D(){const{objects,tool,add,update,select}=useStore();const[coord,setCoord]=useState({x:100,y:100});const W=Math.max(500,window.innerWidth-180),H=Math.max(400,window.innerHeight-64);
-const create=(rawX:number,rawY:number)=>{const type=tool==="select"?"wall":tool;const s=sizes(type);add({id:crypto.randomUUID(),type,x:snap(Math.max(0,rawX)),y:snap(Math.max(0,rawY)),width:s.width,depth:s.depth,height:s.height,rotation:0,thickness:type==="wall"||type==="seismicWall"?20:undefined});};
-const placeAtCoordinates=()=>create(Number(coord.x)||0,Number(coord.y)||0);
-return <div className="canvas-wrap"><div className="coordinate-panel"><b>좌표로 배치</b><label>X <input type="number" value={coord.x} onChange={e=>setCoord(c=>({...c,x:Number(e.target.value)}))}/></label><label>Y <input type="number" value={coord.y} onChange={e=>setCoord(c=>({...c,y:Number(e.target.value)}))}/></label><button onClick={placeAtCoordinates}>배치</button><small>단위: px · 20px 스냅</small></div><Stage width={W} height={H} onMouseDown={e=>{if(e.target===e.target.getStage()&&tool!=="select"){const p=e.target.getStage()!.getPointerPosition();if(p)create(p.x,p.y)}}}><Layer>{Array.from({length:Math.ceil(W/20)+1}).map((_,i)=><Line key={"x"+i} points={[i*20,0,i*20,H]} stroke="#e5e7eb" strokeWidth={i%5===0?1.2:.5}/>)}{Array.from({length:Math.ceil(H/20)+1}).map((_,i)=><Line key={"y"+i} points={[0,i*20,W,i*20]} stroke="#e5e7eb" strokeWidth={i%5===0?1.2:.5}/>}<Text x={20} y={15} text="2D 평면도 · X/Y 좌표 · 20px 스냅" fill="#64748b" fontSize={13}/>{objects.map(o=><Rect key={o.id} x={o.x} y={o.y} width={o.width} height={o.depth} rotation={o.rotation} draggable fill={fill(o.type)} opacity={o.type==="floor"?.72:1} stroke={o.id===useStore.getState().selectedId?"#2563eb":"#64748b"} strokeWidth={o.id===useStore.getState().selectedId?3:1} onClick={()=>select(o.id)} onDblClick={()=>useStore.setState(s=>({objects:s.objects.filter(item=>item.id!==o.id),selectedId:s.selectedId===o.id?null:s.selectedId}))} onDragEnd={e=>update(o.id,{x:snap(e.target.x()),y:snap(e.target.y())})}/>)}</Layer></Stage></div>}
+import { useState } from "react";
+import { Stage, Layer, Rect, Line, Text } from "react-konva";
+import { useStore } from "../store";
+
+const snap = (n: number) => Math.round(n / 20) * 20;
+const sizes = (type: string) =>
+  type === "wall" || type === "seismicWall"
+    ? { width: 160, depth: 20, height: 3 }
+    : type === "floor"
+      ? { width: 600, depth: 400, height: 0.1 }
+      : { width: 60, depth: 60, height: 3 };
+
+const fill = (type: string) =>
+  type === "wall" ? "#334155" :
+  type === "seismicWall" ? "#10b981" :
+  type === "column" ? "#64748b" :
+  type === "damper" ? "#f59e0b" :
+  type === "floor" ? "#cbd5e1" : "#94a3b8";
+
+export default function Canvas2D() {
+  const { objects, tool, add, update, select } = useStore();
+  const [coord, setCoord] = useState({ x: 100, y: 100 });
+  const W = Math.max(500, window.innerWidth - 180);
+  const H = Math.max(400, window.innerHeight - 64);
+
+  const create = (rawX: number, rawY: number) => {
+    const type = tool === "select" ? "wall" : tool;
+    const s = sizes(type);
+    add({
+      id: crypto.randomUUID(), type,
+      x: snap(Math.max(0, rawX)), y: snap(Math.max(0, rawY)),
+      width: s.width, depth: s.depth, height: s.height,
+      rotation: 0,
+      thickness: type === "wall" || type === "seismicWall" ? 20 : undefined
+    });
+  };
+
+  const remove = (id: string) => {
+    useStore.setState(s => ({
+      objects: s.objects.filter(item => item.id !== id),
+      selectedId: s.selectedId === id ? null : s.selectedId
+    }));
+  };
+
+  return (
+    <div className="canvas-wrap">
+      <div className="coordinate-panel">
+        <b>좌표로 배치</b>
+        <label>X <input type="number" value={coord.x} onChange={e => setCoord(c => ({...c, x: Number(e.target.value)}))} /></label>
+        <label>Y <input type="number" value={coord.y} onChange={e => setCoord(c => ({...c, y: Number(e.target.value)}))} /></label>
+        <button onClick={() => create(Number(coord.x) || 0, Number(coord.y) || 0)}>배치</button>
+        <small>단위: px · 20px 스냅</small>
+      </div>
+      <Stage width={W} height={H} onMouseDown={e => {
+        if (e.target === e.target.getStage() && tool !== "select") {
+          const p = e.target.getStage()?.getPointerPosition();
+          if (p) create(p.x, p.y);
+        }
+      }}>
+        <Layer>
+          {Array.from({length: Math.ceil(W / 20) + 1}).map((_, i) => (
+            <Line key={"x" + i} points={[i * 20, 0, i * 20, H]} stroke="#e5e7eb" strokeWidth={i % 5 === 0 ? 1.2 : 0.5} />
+          ))}
+          {Array.from({length: Math.ceil(H / 20) + 1}).map((_, i) => (
+            <Line key={"y" + i} points={[0, i * 20, W, i * 20]} stroke="#e5e7eb" strokeWidth={i % 5 === 0 ? 1.2 : 0.5} />
+          ))}
+          <Text x={20} y={15} text="2D 평면도 · X/Y 좌표 · 20px 스냅" fill="#64748b" fontSize={13} />
+          {objects.map(o => {
+            const selected = o.id === useStore.getState().selectedId;
+            return (
+              <Rect key={o.id} x={o.x} y={o.y} width={o.width} height={o.depth}
+                rotation={o.rotation} draggable fill={fill(o.type)}
+                opacity={o.type === "floor" ? 0.72 : 1}
+                stroke={selected ? "#2563eb" : "#64748b"} strokeWidth={selected ? 3 : 1}
+                onClick={() => select(o.id)} onDblClick={() => remove(o.id)}
+                onDragEnd={e => update(o.id, {x: snap(e.target.x()), y: snap(e.target.y())})}
+              />
+            );
+          })}
+        </Layer>
+      </Stage>
+    </div>
+  );
+}
