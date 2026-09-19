@@ -34,11 +34,11 @@ document.getElementById("openUrl")?.addEventListener("click",()=>{
   else setStatus("AR 앱 주소를 입력하세요");
 });
 
-update(); render3D();
+if(!canvas.querySelector(".piece")) createDefaultRoom(); else { update(); render3D(); }
 }
 function save(){ history.push(snapshot()); if(history.length>50)history.shift(); future=[]; }
 
-function addPiece(type,x,y,record=true,rot=0){
+function addPiece(type,x,y,record=true,rot=0,w=null,h=null){
   if(record) save();
   const el=document.createElement("div");
   el.className="piece "+type;
@@ -48,6 +48,8 @@ function addPiece(type,x,y,record=true,rot=0){
   el.style.top=Math.max(0,snapTo(y))+"px";
   el.style.transform=`rotate(${rot}deg)`;
   if(icon[type]) el.textContent=icon[type];
+  if(w!=null) el.style.width=w+"px";
+  if(h!=null) el.style.height=h+"px";
   canvas.appendChild(el);
   bindPiece(el);
   select(el);
@@ -159,7 +161,7 @@ document.getElementById("redoBtn").onclick=()=>{
 };
 document.getElementById("newBtn").onclick=()=>{
   if(confirm("현재 설계를 모두 지울까요?")){
-    save(); canvas.innerHTML=""; selected=null; update(); render3D(); setStatus("새 설계 시작");
+    save(); createDefaultRoom(); setStatus("새 6×6m 설계 시작");
   }
 };
 document.getElementById("gridBtn").onclick=()=>{
@@ -185,6 +187,30 @@ document.getElementById("check").onclick=()=>{
   r.style.color=n===4?"#10b981":"#ef4444";
   setStatus(n===4?"미션 성공!":"조건을 더 충족해 보세요");
 };
+
+function createDefaultRoom(){
+  canvas.innerHTML="";
+  selected=null;
+  const ox=150, oy=10, size=600, t=20;
+  addPiece("floor",ox,oy,false,0,size,size);
+
+  // Four 6m perimeter walls. Vertical walls use a 20x600 footprint;
+  // render3D converts the long dimension into the wall length automatically.
+  addPiece("wall",ox,oy,false,0,size,t);
+  addPiece("wall",ox,oy+size-t,false,0,size,t);
+  addPiece("wall",ox,oy,false,0,t,size);
+  addPiece("wall",ox+size-t,oy,false,0,t,size);
+
+  // Four corner columns for the simplified educational seismic mission.
+  addPiece("column",ox-2,oy-2,false,0,24,24);
+  addPiece("column",ox+size-t-2,oy-2,false,0,24,24);
+  addPiece("column",ox-2,oy+size-t-2,false,0,24,24);
+  addPiece("column",ox+size-t-2,oy+size-t-2,false,0,24,24);
+
+  update();
+  render3D();
+  setStatus("6×6m 기본 방이 생성됐습니다");
+}
 
 function setView(next){
   view=next;
@@ -222,31 +248,39 @@ function create3DObject(type,p){
   const x=p.offsetLeft, y=p.offsetTop, w=p.offsetWidth, h=p.offsetHeight, rot=+(p.dataset.rot||0);
   const d=document.createElement("div");
   d.className="obj3 "+type+"3d";
-  d.style.left=x+"px"; d.style.top=y+"px";
+  d.style.left=(x+w/2)+"px";
+  d.style.top=(y+h/2)+"px";
   d.style.setProperty("--w",Math.max(20,w)+"px");
   d.style.setProperty("--d",Math.max(14,h)+"px");
   d.style.setProperty("--rot",rot+"deg");
 
   if(type==="wall"){
-    d.innerHTML=`<div class="face f-front"></div><div class="face f-back"></div>
-      <div class="face f-left"></div><div class="face f-right"></div>
-      <div class="face f-top"></div><div class="face f-bottom"></div>`;
+    const length=Math.max(w,h);
+    const depth=Math.min(w,h);
+    const wallRot=rot+(h>w?90:0);
+    d.className+=" wall-solid";
+    d.style.setProperty("--length",length+"px");
+    d.style.setProperty("--depth",Math.max(14,depth)+"px");
     d.style.setProperty("--h","300px");
-    d.style.setProperty("--depth","14px");
+    d.style.setProperty("--wallrot",wallRot+"deg");
+    d.innerHTML='<div class="wall-main"></div><div class="wall-side"></div><div class="wall-top"></div>';
   }else if(type==="column"){
-    d.innerHTML=`<div class="face f-front"></div><div class="face f-back"></div>
-      <div class="face f-left"></div><div class="face f-right"></div>
-      <div class="face f-top"></div><div class="face f-bottom"></div>`;
-    d.style.setProperty("--w","22px"); d.style.setProperty("--d","22px"); d.style.setProperty("--h","250px");
+    d.className+=" column-solid";
+    d.style.setProperty("--h","260px");
+    d.style.setProperty("--size","24px");
+    d.innerHTML='<div class="column-main"></div><div class="column-top"></div>';
   }else if(type==="door"){
-    d.innerHTML=`<div class="door-frame"></div><div class="door-panel"></div><span class="door-knob">●</span>`;
-    d.style.setProperty("--w",Math.max(90,w)+"px"); d.style.setProperty("--h","210px");
+    d.style.setProperty("--w",Math.max(90,w)+"px");
+    d.style.setProperty("--h","210px");
+    d.innerHTML='<div class="door-panel"></div><div class="door-frame"></div><span class="door-knob">●</span>';
   }else if(type==="window"){
-    d.innerHTML=`<div class="window-frame"></div><div class="window-glass"></div><i class="window-cross"></i>`;
-    d.style.setProperty("--w",Math.max(120,w)+"px"); d.style.setProperty("--h","120px");
+    d.style.setProperty("--w",Math.max(120,w)+"px");
+    d.style.setProperty("--h","120px");
+    d.innerHTML='<div class="window-glass"></div><div class="window-frame"></div><i class="window-cross"></i>';
   }else if(type==="roof"){
-    d.innerHTML=`<div class="roof-slab"></div><div class="roof-ridge"></div>`;
-    d.style.setProperty("--w",Math.max(120,w)+"px"); d.style.setProperty("--d",Math.max(80,h)+"px");
+    d.style.setProperty("--w",Math.max(120,w)+"px");
+    d.style.setProperty("--d",Math.max(80,h)+"px");
+    d.innerHTML='<div class="roof-slab"></div><div class="roof-ridge"></div>';
   }else{
     d.textContent=icon[type]||"";
   }
