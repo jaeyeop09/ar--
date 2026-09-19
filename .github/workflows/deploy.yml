@@ -25,11 +25,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          # Do not enable npm cache here because the repository currently
-          # does not contain a package-lock.json.
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --legacy-peer-deps --no-audit --no-fund
 
       - name: Build
         run: npm run build
