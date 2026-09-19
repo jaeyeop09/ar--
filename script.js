@@ -222,9 +222,9 @@ function create3DObject(type,p){
   const x=p.offsetLeft, y=p.offsetTop, w=p.offsetWidth, h=p.offsetHeight, rot=+(p.dataset.rot||0);
   const d=document.createElement("div");
   d.className="obj3 "+type+"3d";
-  d.style.left=(x/100)+"px"; d.style.top=(y/100)+"px";
-  d.style.setProperty("--w",Math.max(12,w/100)+"px");
-  d.style.setProperty("--d",Math.max(12,h/100)+"px");
+  d.style.left=x+"px"; d.style.top=y+"px";
+  d.style.setProperty("--w",Math.max(20,w)+"px");
+  d.style.setProperty("--d",Math.max(14,h)+"px");
   d.style.setProperty("--rot",rot+"deg");
 
   if(type==="wall"){
@@ -240,13 +240,13 @@ function create3DObject(type,p){
     d.style.setProperty("--w","22px"); d.style.setProperty("--d","22px"); d.style.setProperty("--h","250px");
   }else if(type==="door"){
     d.innerHTML=`<div class="door-frame"></div><div class="door-panel"></div><span class="door-knob">●</span>`;
-    d.style.setProperty("--w",Math.max(32,w/100)+"px"); d.style.setProperty("--h","210px");
+    d.style.setProperty("--w",Math.max(90,w)+"px"); d.style.setProperty("--h","210px");
   }else if(type==="window"){
     d.innerHTML=`<div class="window-frame"></div><div class="window-glass"></div><i class="window-cross"></i>`;
-    d.style.setProperty("--w",Math.max(50,w/100)+"px"); d.style.setProperty("--h","120px");
+    d.style.setProperty("--w",Math.max(120,w)+"px"); d.style.setProperty("--h","120px");
   }else if(type==="roof"){
     d.innerHTML=`<div class="roof-slab"></div><div class="roof-ridge"></div>`;
-    d.style.setProperty("--w",Math.max(80,w/100)+"px"); d.style.setProperty("--d",Math.max(50,h/100)+"px");
+    d.style.setProperty("--w",Math.max(120,w)+"px"); d.style.setProperty("--d",Math.max(80,h)+"px");
   }else{
     d.textContent=icon[type]||"";
   }
